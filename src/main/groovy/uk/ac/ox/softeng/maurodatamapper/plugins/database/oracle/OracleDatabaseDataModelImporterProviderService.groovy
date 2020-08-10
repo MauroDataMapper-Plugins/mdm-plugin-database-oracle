@@ -6,13 +6,19 @@ import uk.ac.ox.softeng.maurodatamapper.plugins.database.RemoteDatabaseDataModel
 import java.sql.Connection
 import java.sql.PreparedStatement
 
+// @CompileStatic
 class OracleDatabaseDataModelImporterProviderService
     extends AbstractDatabaseDataModelImporterProviderService<OracleDatabaseDataModelImporterProviderServiceParameters>
     implements RemoteDatabaseDataModelImporterProviderService {
 
     @Override
-    Boolean canImportMultipleDomains() {
-        false
+    String getDisplayName() {
+        'Oracle DB Importer'
+    }
+
+    @Override
+    String getVersion() {
+        '3.0.0-SNAPSHOT'
     }
 
     @Override
@@ -23,11 +29,6 @@ class OracleDatabaseDataModelImporterProviderService
     @Override
     String getColumnIsNullableColumnName() {
         'nullable'
-    }
-
-    @Override
-    String getDatabaseStructureQueryString() {
-        'SELECT * FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = ?'
     }
 
     @Override
@@ -111,24 +112,22 @@ class OracleDatabaseDataModelImporterProviderService
     }
 
     @Override
-    String getDisplayName() {
-        'Oracle DB Importer'
-    }
-
-    @Override
-    String getVersion() {
-        '3.0.0-SNAPSHOT'
-    }
-
-    @Override
-    PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseDataModelImporterProviderServiceParameters params) {
-        PreparedStatement st = connection.prepareStatement(getDatabaseStructureQueryString())
-        st.setString(1, params.databaseOwner)
-        st
+    String getDatabaseStructureQueryString() {
+        'SELECT * FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = ?'
     }
 
     @Override
     boolean isColumnNullable(String nullableColumnValue) {
         nullableColumnValue == 'Y'
+    }
+
+    @Override
+    Boolean canImportMultipleDomains() {
+        false
+    }
+
+    @Override
+    PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseDataModelImporterProviderServiceParameters parameters) {
+        connection.prepareStatement(databaseStructureQueryString).tap {setString 1, parameters.databaseOwner}
     }
 }

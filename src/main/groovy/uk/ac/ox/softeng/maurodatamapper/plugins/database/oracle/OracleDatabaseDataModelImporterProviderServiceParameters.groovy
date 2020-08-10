@@ -6,8 +6,12 @@ import uk.ac.ox.softeng.maurodatamapper.plugins.database.DatabaseDataModelImport
 
 import oracle.jdbc.pool.OracleDataSource
 
+import groovy.util.logging.Slf4j
+
 import java.sql.SQLException
 
+@Slf4j
+// @CompileStatic
 class OracleDatabaseDataModelImporterProviderServiceParameters extends DatabaseDataModelImporterProviderServiceParameters<OracleDataSource> {
 
     @ImportParameterConfig(
@@ -18,7 +22,7 @@ class OracleDatabaseDataModelImporterProviderServiceParameters extends DatabaseD
             name = 'Database',
             order = 1
         ))
-    private String databaseNames
+    String databaseNames
 
     @ImportParameterConfig(
         displayName = 'Database Name/Owner',
@@ -28,11 +32,25 @@ class OracleDatabaseDataModelImporterProviderServiceParameters extends DatabaseD
             name = 'Database',
             order = 1
         ))
-    private String databaseOwner
+    String databaseOwner
 
     @Override
-    int getDefaultPort() {
-        1521
+    void populateFromProperties(Properties properties) {
+        super.populateFromProperties properties
+        databaseOwner = properties.getProperty 'import.database.owner'
+    }
+
+    @Override
+    OracleDataSource getDataSource(String databaseName) throws SQLException {
+        // Just to make sure all the correct fields are set we use the URL parsing (this is how Oracle examples do it)
+        final OracleDataSource dataSource = new OracleDataSource().tap {setURL getUrl(databaseName)}
+        log.info 'DataSource connection url: {}', dataSource.getURL()
+        dataSource
+    }
+
+    @Override
+    String getUrl(String databaseName) {
+        "jdbc:oracle:thin:@${databaseHost}:${databasePort}/${databaseName}"
     }
 
     @Override
@@ -41,34 +59,7 @@ class OracleDatabaseDataModelImporterProviderServiceParameters extends DatabaseD
     }
 
     @Override
-    String getUrl(String databaseName) {
-        'jdbc:oracle:thin:@' + getDatabaseHost() + ':' + getDatabasePort() + '/' + databaseName
-    }
-
-    @Override
-    OracleDataSource getDataSource(String databaseName) throws SQLException {
-        OracleDataSource dataSource = new OracleDataSource()
-        // Just to make sure all the correct fields are set we use the URL parsing (this is how Oracle examples do it)
-        dataSource.setURL getUrl(databaseName)
-        getLogger().info 'DataSource connection url: {}', dataSource.getURL()
-        dataSource
-    }
-
-    String getDataModelName() {
-        super.getDataModelName() != null ? super.getDataModelName() : getDatabaseOwner()
-    }
-
-    String getDatabaseOwner() {
-        databaseOwner
-    }
-
-    void setDatabaseOwner(String databaseOwner) {
-        this.databaseOwner = databaseOwner
-    }
-
-    @Override
-    void populateFromProperties(Properties properties) {
-        super.populateFromProperties properties
-        databaseOwner = properties.getProperty 'import.database.owner'
+    int getDefaultPort() {
+        1521
     }
 }

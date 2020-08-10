@@ -59,7 +59,6 @@ public class OracleDatabaseDataModelImporterProviderServiceParameters extends Da
         return dataSource;
     }
 
-    @Override
     public String getDataModelName() {
         return super.getDataModelName() != null ? super.getDataModelName() : getDatabaseOwner();
     }

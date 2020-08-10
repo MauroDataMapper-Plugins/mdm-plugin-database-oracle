@@ -7,12 +7,16 @@ import uk.ac.ox.softeng.maurodatamapper.plugins.testing.utils.BaseDatabasePlugin
 
 import org.junit.Test
 
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
+
 class OracleDatabaseDataModelImporterProviderServiceTest extends BaseDatabasePluginTest<OracleDatabaseDataModelImporterProviderServiceParameters, OracleDatabaseDataModelImporterProviderService> {
 
     @Override
     OracleDatabaseDataModelImporterProviderServiceParameters createDatabaseImportParameters() {
         OracleDatabaseDataModelImporterProviderServiceParameters params = new OracleDatabaseDataModelImporterProviderServiceParameters()
-        params.setDatabaseName("ORCLPDB1")
+        params.setDatabaseNames("ORCLPDB1")
         params.setDatabaseUsername("SYSTEM")
         params.setDatabasePassword("BOpVnzFi9Ew=1")
         params.setDatabaseOwner("SYSTEM")
@@ -47,13 +51,13 @@ class OracleDatabaseDataModelImporterProviderServiceTest extends BaseDatabasePlu
         Set<DataClass> childDataClasses = dataModel.getChildDataClasses()
         DataClass publicSchema = childDataClasses.first()
 
-        assertEquals("Number of child tables/dataclasses", 3, publicSchema.getChildDataClasses()?.size())
+        assertEquals("Number of child tables/dataclasses", 3, publicSchema.getDataClasses()?.size())
 
-        Set<DataClass> dataClasses = publicSchema.childDataClasses
+        Set<DataClass> dataClasses = publicSchema.dataClasses
 
         // Tables
         DataClass metadataTable = dataClasses.find {it.label == "METADATA"}
-        assertEquals("Metadata Number of columns/dataElements", 10, metadataTable.getChildDataElements().size())
+        assertEquals("Metadata Number of columns/dataElements", 10, metadataTable.getDataElements().size())
         assertEquals("Metadata Number of metadata", 5, metadataTable.metadata.size())
 
         assertTrue("MD All metadata values are valid", metadataTable.metadata.every {it.value && it.key != it.value})
@@ -68,7 +72,7 @@ class OracleDatabaseDataModelImporterProviderServiceTest extends BaseDatabasePlu
         assertEquals("Correct order of columns", 'CATALOGUE_ITEM_ID, NAMESPACE, KEY', multipleColIndex.value)
 
         DataClass ciTable = dataClasses.find {it.label == "CATALOGUE_ITEM"}
-        assertEquals("CI Number of columns/dataElements", 10, ciTable.getChildDataElements().size())
+        assertEquals("CI Number of columns/dataElements", 10, ciTable.getDataElements().size())
         assertEquals("CI Number of metadata", 4, ciTable.metadata.size())
 
         assertTrue("CI All metadata values are valid", ciTable.metadata.every {it.value && it.key != it.value})
@@ -79,7 +83,7 @@ class OracleDatabaseDataModelImporterProviderServiceTest extends BaseDatabasePlu
 
 
         DataClass cuTable = dataClasses.find {it.label == "CATALOGUE_USER"}
-        assertEquals("CU Number of columns/dataElements", 18, cuTable.getChildDataElements().size())
+        assertEquals("CU Number of columns/dataElements", 18, cuTable.getDataElements().size())
         assertEquals("CU Number of metadata", 5, cuTable.metadata.size())
 
         assertTrue("CU All metadata values are valid", cuTable.metadata.every {it.value && it.key != it.value})
@@ -91,10 +95,10 @@ class OracleDatabaseDataModelImporterProviderServiceTest extends BaseDatabasePlu
         assertEquals("CU Unique Constraint", 1, cuTable.metadata.count {it.key.startsWith 'unique['})
 
         // Columns
-        assertTrue("MD all elements required", metadataTable.childDataElements.every {it.minMultiplicity == 1})
-        assertEquals("CI mandatory elements", 9, ciTable.childDataElements.count {it.minMultiplicity == 1})
-        assertEquals("CI optional element description", 0, ciTable.findChildDataElement('DESCRIPTION').minMultiplicity)
-        assertEquals("CU mandatory elements", 10, cuTable.childDataElements.count {it.minMultiplicity == 1})
+        assertTrue("MD all elements required", metadataTable.dataElements.every {it.minMultiplicity == 1})
+        assertEquals("CI mandatory elements", 9, ciTable.dataElements.count {it.minMultiplicity == 1})
+        assertEquals("CI optional element description", 0, ciTable.findDataElement('DESCRIPTION').minMultiplicity)
+        assertEquals("CU mandatory elements", 10, cuTable.dataElements.count {it.minMultiplicity == 1})
 
     }
 }

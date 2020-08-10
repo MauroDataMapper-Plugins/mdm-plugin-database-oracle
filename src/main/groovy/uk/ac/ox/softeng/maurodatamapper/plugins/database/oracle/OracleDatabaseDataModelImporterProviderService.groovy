@@ -131,7 +131,7 @@ WHERE ac.OWNER = ?
     }
 
     @Override
-    Boolean isColumnNullable(String nullableColumnValue) {
+    boolean isColumnNullable(String nullableColumnValue) {
         nullableColumnValue == 'Y'
     }
 }

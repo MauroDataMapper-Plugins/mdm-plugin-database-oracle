@@ -1,23 +1,17 @@
-package ox.softeng.metadatacatalogue.plugins.database.oracle.test
+package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 
-import ox.softeng.metadatacatalogue.core.catalogue.linkable.component.DataClass
-import ox.softeng.metadatacatalogue.core.catalogue.linkable.datamodel.DataModel
-import ox.softeng.metadatacatalogue.core.facet.Metadata
-import ox.softeng.metadatacatalogue.plugins.database.oracle.OracleDatabaseImportParameters
-import ox.softeng.metadatacatalogue.plugins.database.oracle.OracleDatabaseImporterService
-import ox.softeng.metadatacatalogue.plugins.test.BaseDatabasePluginTest
+import uk.ac.ox.softeng.maurodatamapper.core.facet.Metadata
+import uk.ac.ox.softeng.maurodatamapper.datamodel.DataModel
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.DataClass
+import uk.ac.ox.softeng.maurodatamapper.plugins.testing.utils.BaseDatabasePluginTest
 
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
-
-class OracleDbImportTest extends BaseDatabasePluginTest<OracleDatabaseImportParameters, OracleDatabaseImporterService> {
+class OracleDatabaseDataModelImporterProviderServiceTest extends BaseDatabasePluginTest<OracleDatabaseDataModelImporterProviderServiceParameters, OracleDatabaseDataModelImporterProviderService> {
 
     @Override
-    OracleDatabaseImportParameters createDatabaseImportParameters() {
-        OracleDatabaseImportParameters params = new OracleDatabaseImportParameters()
+    OracleDatabaseDataModelImporterProviderServiceParameters createDatabaseImportParameters() {
+        OracleDatabaseDataModelImporterProviderServiceParameters params = new OracleDatabaseDataModelImporterProviderServiceParameters()
         params.setDatabaseName("ORCLPDB1")
         params.setDatabaseUsername("SYSTEM")
         params.setDatabasePassword("BOpVnzFi9Ew=1")
@@ -37,7 +31,7 @@ class OracleDbImportTest extends BaseDatabasePluginTest<OracleDatabaseImportPara
 
     @Test
     void testImportSimpleDatabase() {
-        OracleDatabaseImportParameters params = createDatabaseImportParameters(databaseHost, databasePort)
+        OracleDatabaseDataModelImporterProviderServiceParameters params = createDatabaseImportParameters(databaseHost, databasePort)
         params.setDatabaseOwner("METADATA_SIMPLE")
 
         DataModel dataModel = importDataModelAndRetrieveFromDatabase(params);

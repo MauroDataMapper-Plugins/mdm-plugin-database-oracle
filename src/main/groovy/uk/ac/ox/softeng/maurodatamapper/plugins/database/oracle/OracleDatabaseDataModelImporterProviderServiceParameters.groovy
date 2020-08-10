@@ -1,18 +1,17 @@
-package ox.softeng.metadatacatalogue.plugins.database.oracle;
+package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 
-import ox.softeng.metadatacatalogue.core.spi.importer.parameter.config.ImportGroupConfig;
-import ox.softeng.metadatacatalogue.core.spi.importer.parameter.config.ImportParameterConfig;
-import ox.softeng.metadatacatalogue.plugins.database.DatabaseImportParameters;
+import uk.ac.ox.softeng.maurodatamapper.core.provider.importer.parameter.config.ImportGroupConfig
+import uk.ac.ox.softeng.maurodatamapper.core.provider.importer.parameter.config.ImportParameterConfig
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.DatabaseDataModelImporterProviderServiceParameters
 
-import oracle.jdbc.pool.OracleDataSource;
+import oracle.jdbc.pool.OracleDataSource
 
 import java.sql.SQLException;
-import java.util.Properties;
 
 /**
  * Created by james on 31/05/2017.
  */
-public class OracleDatabaseImportParameters extends DatabaseImportParameters<OracleDataSource> {
+public class OracleDatabaseDataModelImporterProviderServiceParameters extends DatabaseDataModelImporterProviderServiceParameters<OracleDataSource> {
 
     @ImportParameterConfig(
         displayName = "Database Server",

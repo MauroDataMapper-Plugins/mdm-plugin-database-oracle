@@ -1,6 +1,7 @@
-package ox.softeng.metadatacatalogue.plugins.database.oracle
+package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 
-import ox.softeng.metadatacatalogue.plugins.database.AbstractDatabaseImporter
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.AbstractDatabaseDataModelImporterProviderService
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.RemoteDatabaseDataModelImporterProviderService
 
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -8,7 +9,9 @@ import java.sql.PreparedStatement
 /**
  * Created by james on 31/05/2017.
  */
-class OracleDatabaseImporterService extends AbstractDatabaseImporter<OracleDatabaseImportParameters> {
+class OracleDatabaseDataModelImporterProviderService extends
+    AbstractDatabaseDataModelImporterProviderService<OracleDatabaseDataModelImporterProviderServiceParameters> implements
+    RemoteDatabaseDataModelImporterProviderService {
 
     @Override
     Boolean canImportMultipleDomains() {
@@ -121,7 +124,7 @@ WHERE ac.OWNER = ?
     }
 
     @Override
-    PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseImportParameters params) {
+    PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseDataModelImporterProviderServiceParameters params) {
         PreparedStatement st = connection.prepareStatement(getDatabaseStructureQueryString())
         st.setString(1, params.databaseOwner)
         st

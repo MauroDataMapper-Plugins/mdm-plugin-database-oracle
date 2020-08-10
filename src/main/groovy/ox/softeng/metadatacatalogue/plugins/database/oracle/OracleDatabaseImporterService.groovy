@@ -117,7 +117,7 @@ WHERE ac.OWNER = ?
 
     @Override
     String getVersion() {
-        '2.0.0'
+        '3.0.0-SNAPSHOT'
     }
 
     @Override

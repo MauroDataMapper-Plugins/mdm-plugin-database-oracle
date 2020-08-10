@@ -4,10 +4,13 @@ import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.PrimitiveType
 import uk.ac.ox.softeng.maurodatamapper.datamodel.rest.transport.DefaultDataType
 
-/**
- * @since 19/04/2018
- */
 class OracleDataTypeProvider extends DataTypeService {
+
+    @Override
+    String getDisplayName() {
+        'Oracle Database DataTypes'
+    }
+
     @Override
     List<DefaultDataType> getDefaultListOfDataTypes() {
         [
@@ -72,10 +75,5 @@ class OracleDataTypeProvider extends DataTypeService {
                               description: 'Where size is the number of characters to store. Variable-length string.\nMaximum size of 4000 bytes. ' +
                                            'Maximum size of 32KB in PLSQL.'),
         ]
-    }
-
-    @Override
-    String getDisplayName() {
-        'Oracle Database DataTypes'
     }
 }

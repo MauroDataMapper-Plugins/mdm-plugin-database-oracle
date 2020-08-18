@@ -57,6 +57,11 @@ class OracleDatabaseDataModelImporterProviderServiceParameters extends DatabaseD
     }
 
     @Override
+    boolean isMultipleDataModelImport() {
+        databaseNames?.contains ','
+    }
+
+    @Override
     void populateFromProperties(Properties properties) {
         super.populateFromProperties properties
         databaseOwner = properties.getProperty 'import.database.owner'

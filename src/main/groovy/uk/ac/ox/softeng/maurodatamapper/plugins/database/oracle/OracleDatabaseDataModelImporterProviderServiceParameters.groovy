@@ -52,6 +52,11 @@ class OracleDatabaseDataModelImporterProviderServiceParameters extends DatabaseD
     String databaseOwner
 
     @Override
+    String getModelName() {
+        super.modelName ?: databaseOwner
+    }
+
+    @Override
     void populateFromProperties(Properties properties) {
         super.populateFromProperties properties
         databaseOwner = properties.getProperty 'import.database.owner'

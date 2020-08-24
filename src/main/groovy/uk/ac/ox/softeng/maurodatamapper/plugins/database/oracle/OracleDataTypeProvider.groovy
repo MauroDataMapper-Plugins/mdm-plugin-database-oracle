@@ -19,14 +19,20 @@ package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataTypeService
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.PrimitiveType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.DefaultDataTypeProvider
 import uk.ac.ox.softeng.maurodatamapper.datamodel.rest.transport.DefaultDataType
 
 // @CompileStatic
-class OracleDataTypeProvider extends DataTypeService {
+class OracleDataTypeProvider implements DefaultDataTypeProvider {
 
     @Override
     String getDisplayName() {
         'Oracle Database DataTypes'
+    }
+
+    @Override
+    String getVersion() {
+       '3.0.0-SNAPSHOT'
     }
 
     @Override

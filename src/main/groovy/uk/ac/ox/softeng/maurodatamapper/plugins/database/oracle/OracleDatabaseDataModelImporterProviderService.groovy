@@ -35,7 +35,7 @@ class OracleDatabaseDataModelImporterProviderService
 
     @Override
     String getVersion() {
-        '3.0.0-SNAPSHOT'
+        getClass().getPackage().getSpecificationVersion() ?: 'SNAPSHOT'
     }
 
     @Override

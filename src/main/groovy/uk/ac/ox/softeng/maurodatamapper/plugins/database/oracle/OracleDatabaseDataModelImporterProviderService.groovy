@@ -17,11 +17,14 @@
  */
 package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataType
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.AbstractDatabaseDataModelImporterProviderService
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.RemoteDatabaseDataModelImporterProviderService
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.summarymetadata.AbstractIntervalHelper
 
 import java.sql.Connection
 import java.sql.PreparedStatement
+import java.time.format.DateTimeFormatter
 
 // @CompileStatic
 class OracleDatabaseDataModelImporterProviderService
@@ -142,6 +145,101 @@ class OracleDatabaseDataModelImporterProviderService
     Boolean canImportMultipleDomains() {
         false
     }
+
+    /**
+     * Oracle identifiers escaped in double quotes. Identifiers must be in upper case for Oracle.
+     */
+    @Override
+    String escapeIdentifier(String identifier) {
+        "\"${identifier.toUpperCase()}\""
+    }
+
+    @Override
+    boolean isColumnPossibleEnumeration(DataType dataType) {
+        dataType.domainType == 'PrimitiveType' && (dataType.label == "CHAR" || dataType.label == "VARCHAR2")
+    }
+
+    @Override
+    boolean isColumnForDateSummary(DataType dataType) {
+        ["date", "smalldatetime", "datetime", "datetime2"].contains(dataType.label)
+    }
+
+    @Override
+    boolean isColumnForDecimalSummary(DataType dataType) {
+        ["decimal", "numeric"].contains(dataType.label)
+    }
+
+    @Override
+    boolean isColumnForIntegerSummary(DataType dataType) {
+        ["tinyint", "smallint", "int", "bigint"].contains(dataType.label)
+    }
+
+    @Override
+    String minMaxColumnValuesQueryString(String tableName, String columnName) {
+        "SELECT MIN(\"${columnName.toUpperCase()}\") AS min_value, MAX(\"${columnName.toUpperCase()}\") AS max_value FROM \"${tableName.toUpperCase()}\";"
+    }
+
+    @Override
+    String columnRangeDistributionQueryString(String tableName, String columnName, DataType dataType, AbstractIntervalHelper intervalHelper) {
+        List<String> selects = intervalHelper.intervals.collect {
+            "SELECT '${it.key}' AS interval_label, ${formatDataType(dataType, it.value.aValue)} AS interval_start, ${formatDataType(dataType, it.value.bValue)} AS interval_end"
+        }
+
+        rangeDistributionQueryString(tableName, columnName, selects)
+    }
+
+    /**
+     * Return a string which uses the SQL Server CONVERT function for Dates, otherwise string formatting
+     *
+     * @param dataType
+     * @param value
+     * @return Date formatted as ISO8601 (see
+     * https://docs.microsoft.com/en-us/sql/t-sql/functions/cast-and-convert-transact-sql?view=sql-server-ver15)
+     * or a string
+     */
+    String formatDataType(DataType dataType, Object value) {
+        if (isColumnForDateSummary(dataType)){
+            "CONVERT(DATETIME, '${DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(value)}', 126)"
+        } else {
+            "${value}"
+        }
+    }
+
+    /**
+     * Returns a String that looks, for example, like this:
+     * WITH #interval AS (
+     *   SELECT '0 - 100' AS interval_label, 0 AS interval_start, 100 AS interval_end
+     *   UNION
+     *   SELECT '100 - 200' AS interval_label, 100 AS interval_start, 200 AS interval_end
+     * )
+     * SELECT interval_label, COUNT([my_column]) AS interval_count
+     * FROM #interval
+     * LEFT JOIN
+     * [my_table] ON [my_table].[my_column] >= #interval.interval_start AND [my_table].[my_column] < #interval.interval_end
+     * GROUP BY interval_label, interval_start
+     * ORDER BY interval_start ASC;
+     *
+     * @param tableName
+     * @param columnName
+     * @param selects
+     * @return
+     */
+    private String rangeDistributionQueryString(String tableName, String columnName, List<String> selects) {
+        String intervals = selects.join(" UNION ")
+
+        String sql = "WITH #interval AS (${intervals})" +
+                """
+        SELECT interval_label, COUNT([${columnName}]) AS interval_count
+        FROM #interval
+        LEFT JOIN
+        [${tableName}] ON [${tableName}].[${columnName}] >= #interval.interval_start AND [${tableName}].[${columnName}] < #interval.interval_end
+        GROUP BY interval_label, interval_start
+        ORDER BY interval_start ASC;
+        """
+
+        sql.stripIndent()
+    }
+
 
     @Override
     PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseDataModelImporterProviderServiceParameters parameters) {

@@ -161,45 +161,50 @@ class OracleDatabaseDataModelImporterProviderService
 
     @Override
     boolean isColumnForDateSummary(DataType dataType) {
-        ["date", "smalldatetime", "datetime", "datetime2"].contains(dataType.label)
-    }
-
-    @Override
-    boolean isColumnForDecimalSummary(DataType dataType) {
-        ["decimal", "numeric"].contains(dataType.label)
-    }
-
-    @Override
-    boolean isColumnForIntegerSummary(DataType dataType) {
-        ["tinyint", "smallint", "int", "bigint"].contains(dataType.label)
-    }
-
-    @Override
-    String minMaxColumnValuesQueryString(String tableName, String columnName) {
-        "SELECT MIN(\"${columnName.toUpperCase()}\") AS min_value, MAX(\"${columnName.toUpperCase()}\") AS max_value FROM \"${tableName.toUpperCase()}\";"
-    }
-
-    @Override
-    String columnRangeDistributionQueryString(String tableName, String columnName, DataType dataType, AbstractIntervalHelper intervalHelper) {
-        List<String> selects = intervalHelper.intervals.collect {
-            "SELECT '${it.key}' AS interval_label, ${formatDataType(dataType, it.value.aValue)} AS interval_start, ${formatDataType(dataType, it.value.bValue)} AS interval_end"
-        }
-
-        rangeDistributionQueryString(tableName, columnName, selects)
+        dataType.domainType == 'PrimitiveType' && ["DATE"].contains(dataType.label)
     }
 
     /**
-     * Return a string which uses the SQL Server CONVERT function for Dates, otherwise string formatting
+     * Int and decimals all have datatype NUMBER
+     * @param dataType
+     * @return
+     */
+    @Override
+    boolean isColumnForDecimalSummary(DataType dataType) {
+        dataType.domainType == 'PrimitiveType' && ["NUMBER"].contains(dataType.label)
+    }
+
+    /**
+     * INT has a datatype of NUMBER so will be handled using the Decimal helper
+     * @param dataType
+     * @return
+     */
+    @Override
+    boolean isColumnForIntegerSummary(DataType dataType) {
+        false
+    }
+
+    @Override
+    String columnRangeDistributionQueryString(String schemaName, String tableName, String columnName, DataType dataType, AbstractIntervalHelper intervalHelper) {
+        List<String> selects = intervalHelper.intervals.collect {
+            "SELECT '${it.key}' AS interval_label, ${formatDataType(dataType, it.value.aValue)} AS interval_start, ${formatDataType(dataType, it.value.bValue)} AS interval_end FROM DUAL "
+        }
+
+        rangeDistributionQueryString(schemaName, tableName, columnName, selects)
+    }
+
+    /**
+     * If dataType represents a date then return a string which uses the Oracle TO_DATE function to
+     * convert the value to a date, otherwise just return the value as a string
      *
      * @param dataType
      * @param value
-     * @return Date formatted as ISO8601 (see
-     * https://docs.microsoft.com/en-us/sql/t-sql/functions/cast-and-convert-transact-sql?view=sql-server-ver15)
+     * @return fragment of query like TO_DATE('2020-08-15 23:18:00', 'YYYY-MM-DD HH24:MI:SS')
      * or a string
      */
     String formatDataType(DataType dataType, Object value) {
         if (isColumnForDateSummary(dataType)){
-            "CONVERT(DATETIME, '${DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(value)}', 126)"
+            "TO_DATE('${DateTimeFormatter.ISO_LOCAL_DATE.format(value)} ${DateTimeFormatter.ISO_LOCAL_TIME.format(value)}', 'YYYY-MM-DD HH24:MI:SS')"
         } else {
             "${value}"
         }
@@ -207,15 +212,16 @@ class OracleDatabaseDataModelImporterProviderService
 
     /**
      * Returns a String that looks, for example, like this:
-     * WITH #interval AS (
-     *   SELECT '0 - 100' AS interval_label, 0 AS interval_start, 100 AS interval_end
+     * WITH interval AS (
+     *   SELECT '0 - 100' AS interval_label, 0 AS interval_start, 100 AS interval_end FROM DUAL
      *   UNION
-     *   SELECT '100 - 200' AS interval_label, 100 AS interval_start, 200 AS interval_end
+     *   SELECT '100 - 200' AS interval_label, 100 AS interval_start, 200 AS interval_end FROM DUAL
      * )
-     * SELECT interval_label, COUNT([my_column]) AS interval_count
-     * FROM #interval
+     * SELECT interval_label, COUNT("MY_COLUMN") AS interval_count
+     * FROM interval
      * LEFT JOIN
-     * [my_table] ON [my_table].[my_column] >= #interval.interval_start AND [my_table].[my_column] < #interval.interval_end
+     * "MY_SCHEMA"."MY_TABLE" ON "MY_SCHEMA"."MY_TABLE"."MY_COLUMN" >= interval.interval_start
+     * AND "MY_SCHEMA"."MY_TABLE"."MY_COLUMN" < interval.interval_end
      * GROUP BY interval_label, interval_start
      * ORDER BY interval_start ASC;
      *
@@ -224,17 +230,19 @@ class OracleDatabaseDataModelImporterProviderService
      * @param selects
      * @return
      */
-    private String rangeDistributionQueryString(String tableName, String columnName, List<String> selects) {
+    private String rangeDistributionQueryString(String schemaName, String tableName, String columnName, List<String> selects) {
         String intervals = selects.join(" UNION ")
 
-        String sql = "WITH #interval AS (${intervals})" +
+        String sql = "WITH interval AS (${intervals})" +
                 """
-        SELECT interval_label, COUNT([${columnName}]) AS interval_count
-        FROM #interval
+        SELECT interval_label, COUNT(${escapeIdentifier(columnName)}) AS interval_count
+        FROM interval
         LEFT JOIN
-        [${tableName}] ON [${tableName}].[${columnName}] >= #interval.interval_start AND [${tableName}].[${columnName}] < #interval.interval_end
+        ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)} 
+        ON ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} >= interval.interval_start 
+        AND ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} < interval.interval_end
         GROUP BY interval_label, interval_start
-        ORDER BY interval_start ASC;
+        ORDER BY interval_start ASC
         """
 
         sql.stripIndent()

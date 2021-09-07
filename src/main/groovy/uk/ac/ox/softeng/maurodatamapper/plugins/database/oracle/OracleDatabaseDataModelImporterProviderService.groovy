@@ -225,10 +225,11 @@ class OracleDatabaseDataModelImporterProviderService
      * GROUP BY interval_label, interval_start
      * ORDER BY interval_start ASC;
      *
+     * @param schemaName
      * @param tableName
      * @param columnName
      * @param selects
-     * @return
+     * @return Query string for intervals, using Oracle SQL
      */
     private String rangeDistributionQueryString(String schemaName, String tableName, String columnName, List<String> selects) {
         String intervals = selects.join(" UNION ")
@@ -247,7 +248,6 @@ class OracleDatabaseDataModelImporterProviderService
 
         sql.stripIndent()
     }
-
 
     @Override
     PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseDataModelImporterProviderServiceParameters parameters) {

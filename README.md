@@ -42,3 +42,11 @@ dependencies {
     runtimeOnly 'uk.ac.ox.softeng.maurodatamapper.plugins:mdm-plugin-database-oracle:4.0.0'
 }
 ```
+
+## Development
+
+To run tests:
+```./gradlew --build-cache integrationTest```
+
+With debug:
+```./gradlew --build-cache integrationTest --debug-jvm```  

@@ -17,11 +17,14 @@
  */
 package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 
+import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataType
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.AbstractDatabaseDataModelImporterProviderService
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.RemoteDatabaseDataModelImporterProviderService
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.summarymetadata.AbstractIntervalHelper
 
 import java.sql.Connection
 import java.sql.PreparedStatement
+import java.time.format.DateTimeFormatter
 
 // @CompileStatic
 class OracleDatabaseDataModelImporterProviderService
@@ -141,6 +144,109 @@ class OracleDatabaseDataModelImporterProviderService
     @Override
     Boolean canImportMultipleDomains() {
         false
+    }
+
+    /**
+     * Oracle identifiers escaped in double quotes. Identifiers must be in upper case for Oracle.
+     */
+    @Override
+    String escapeIdentifier(String identifier) {
+        "\"${identifier.toUpperCase()}\""
+    }
+
+    @Override
+    boolean isColumnPossibleEnumeration(DataType dataType) {
+        dataType.domainType == 'PrimitiveType' && (dataType.label == "CHAR" || dataType.label == "VARCHAR2")
+    }
+
+    @Override
+    boolean isColumnForDateSummary(DataType dataType) {
+        dataType.domainType == 'PrimitiveType' && ["DATE"].contains(dataType.label)
+    }
+
+    /**
+     * Int and decimals all have datatype NUMBER
+     * @param dataType
+     * @return
+     */
+    @Override
+    boolean isColumnForDecimalSummary(DataType dataType) {
+        dataType.domainType == 'PrimitiveType' && ["NUMBER"].contains(dataType.label)
+    }
+
+    /**
+     * INT has a datatype of NUMBER so will be handled using the Decimal helper
+     * @param dataType
+     * @return
+     */
+    @Override
+    boolean isColumnForIntegerSummary(DataType dataType) {
+        false
+    }
+
+    @Override
+    String columnRangeDistributionQueryString(DataType dataType, AbstractIntervalHelper intervalHelper, String columnName, String tableName, String schemaName) {
+        List<String> selects = intervalHelper.intervals.collect {
+            "SELECT '${it.key}' AS interval_label, ${formatDataType(dataType, it.value.aValue)} AS interval_start, ${formatDataType(dataType, it.value.bValue)} AS interval_end FROM DUAL "
+        }
+
+        rangeDistributionQueryString(selects, columnName, tableName, schemaName)
+    }
+
+    /**
+     * If dataType represents a date then return a string which uses the Oracle TO_DATE function to
+     * convert the value to a date, otherwise just return the value as a string
+     *
+     * @param dataType
+     * @param value
+     * @return fragment of query like TO_DATE('2020-08-15 23:18:00', 'YYYY-MM-DD HH24:MI:SS')
+     * or a string
+     */
+    String formatDataType(DataType dataType, Object value) {
+        if (isColumnForDateSummary(dataType)){
+            "TO_DATE('${DateTimeFormatter.ISO_LOCAL_DATE.format(value)} ${DateTimeFormatter.ISO_LOCAL_TIME.format(value)}', 'YYYY-MM-DD HH24:MI:SS')"
+        } else {
+            "${value}"
+        }
+    }
+
+    /**
+     * Returns a String that looks, for example, like this:
+     * WITH interval AS (
+     *   SELECT '0 - 100' AS interval_label, 0 AS interval_start, 100 AS interval_end FROM DUAL
+     *   UNION
+     *   SELECT '100 - 200' AS interval_label, 100 AS interval_start, 200 AS interval_end FROM DUAL
+     * )
+     * SELECT interval_label, COUNT("MY_COLUMN") AS interval_count
+     * FROM interval
+     * LEFT JOIN
+     * "MY_SCHEMA"."MY_TABLE" ON "MY_SCHEMA"."MY_TABLE"."MY_COLUMN" >= interval.interval_start
+     * AND "MY_SCHEMA"."MY_TABLE"."MY_COLUMN" < interval.interval_end
+     * GROUP BY interval_label, interval_start
+     * ORDER BY interval_start ASC;
+     *
+     * @param schemaName
+     * @param tableName
+     * @param columnName
+     * @param selects
+     * @return Query string for intervals, using Oracle SQL
+     */
+    private String rangeDistributionQueryString(List<String> selects, String columnName, String tableName, String schemaName) {
+        String intervals = selects.join(" UNION ")
+
+        String sql = "WITH interval AS (${intervals})" +
+                """
+        SELECT interval_label, COUNT(${escapeIdentifier(columnName)}) AS interval_count
+        FROM interval
+        LEFT JOIN
+        ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)} 
+        ON ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} >= interval.interval_start 
+        AND ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} < interval.interval_end
+        GROUP BY interval_label, interval_start
+        ORDER BY interval_start ASC
+        """
+
+        sql.stripIndent()
     }
 
     @Override

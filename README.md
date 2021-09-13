@@ -37,8 +37,17 @@ Please note, if adding more than one plugin, this is a semicolon-separated list
 
 In the `dependencies.gradle` file add:
 
-```groovy
+```
 dependencies {
-    runtimeOnly 'uk.ac.ox.softeng.maurodatamapper.plugins:mdm-plugin-database-oracle:4.0.0'
+    runtimeOnly 'uk.ac.ox.softeng.maurodatamapper.plugins:mdm-plugin-database-oracle:5.0.0'
 }
 ```
+
+## Development
+
+To run tests:
+```./gradlew --build-cache integrationTest```
+
+With debug:
+```./gradlew --build-cache integrationTest --debug-jvm```  
+>>>>>>> b16406b (mc-9289 bump versions, edit README)

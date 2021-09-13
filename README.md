@@ -50,4 +50,3 @@ To run tests:
 
 With debug:
 ```./gradlew --build-cache integrationTest --debug-jvm```  
->>>>>>> b16406b (mc-9289 bump versions, edit README)

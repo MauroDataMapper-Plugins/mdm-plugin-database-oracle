@@ -163,7 +163,7 @@ class OracleDatabaseDataModelImporterProviderService
     @Override
     List<String> approxCountQueryString(String tableName, String schemaName = null) {
         List<String> queryStrings = super.approxCountQueryString(tableName, schemaName)
-        queryStrings.push("SELECT NUM_ROWS FROM ALL_TABLES WHERE TABLE_NAME = '${tableName}'".toString())
+        queryStrings.push("SELECT NUM_ROWS AS APPROX_COUNT FROM ALL_TABLES WHERE TABLE_NAME = '${tableName}'".toString())
         queryStrings
     }
 

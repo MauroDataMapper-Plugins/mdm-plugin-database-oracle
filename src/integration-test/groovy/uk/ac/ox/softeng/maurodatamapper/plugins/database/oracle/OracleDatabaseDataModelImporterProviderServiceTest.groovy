@@ -354,7 +354,7 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         //sample_numeric
         final DataElement sample_numeric = sampleTable.dataElements.find{it.label == "SAMPLE_NUMERIC"}
         assertEquals 'reportValue for sample_numeric',
-                '{"-5.00000 - 0.00000":80,"0.00000 - 5.00000":81,"5.00000 - 10.00000":20}',
+                '{"-10.00000 - -5.00000":20,"-5.00000 - 0.00000":80,"0.00000 - 5.00000":81,"5.00000 - 10.00000":20}',
                 sample_numeric.summaryMetadata[0].summaryMetadataReports[0].reportValue
 
         //sample_date

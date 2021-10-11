@@ -373,3 +373,5 @@ SET sample_decimal = SIN(sample_int),
 sample_date = TO_DATE('2020-09-02', 'YYYY-MM-DD') + 200 * SIN(sample_int) / 24,
 sample_varchar2 = 'ENUM' || TO_CHAR(MOD(sample_int, 15));
 commit;
+
+CREATE VIEW bigger_sample_view AS SELECT * FROM bigger_sample;

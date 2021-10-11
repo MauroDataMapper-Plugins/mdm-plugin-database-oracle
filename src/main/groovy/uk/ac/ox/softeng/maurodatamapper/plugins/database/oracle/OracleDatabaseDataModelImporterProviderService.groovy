@@ -34,7 +34,7 @@ class OracleDatabaseDataModelImporterProviderService
 
     @Override
     SamplingStrategy getSamplingStrategy(OracleDatabaseDataModelImporterProviderServiceParameters parameters) {
-        new SamplingStrategy(parameters.sampleThreshold ?: DEFAULT_SAMPLE_THRESHOLD, parameters.samplePercent ?: DEFAULT_SAMPLE_PERCENTAGE)
+        new OracleSamplingStrategy(parameters.sampleThreshold ?: DEFAULT_SAMPLE_THRESHOLD, parameters.samplePercent ?: DEFAULT_SAMPLE_PERCENTAGE)
     }
 
     @Override

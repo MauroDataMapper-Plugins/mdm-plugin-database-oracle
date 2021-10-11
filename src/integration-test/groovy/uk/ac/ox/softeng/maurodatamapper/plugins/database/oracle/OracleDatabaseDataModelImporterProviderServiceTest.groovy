@@ -68,7 +68,6 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         assertEquals 'Number of columntypes/datatypes', 10, dataModel.dataTypes?.size()
         assertEquals 'Number of primitive types', 8, dataModel.dataTypes.findAll {it.domainType == 'PrimitiveType'}.size()
         assertEquals 'Number of reference types', 2, dataModel.dataTypes.findAll {it.domainType == 'ReferenceType'}.size()
-        assertEquals 'Number of tables/dataclasses', 7, dataModel.dataClasses.size()
         assertEquals 'Number of child tables/dataclasses', 1, dataModel.childDataClasses?.size()
 
 
@@ -89,7 +88,6 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         assertEquals 'Number of columntypes/datatypes', 14, dataModel.dataTypes?.size()
         assertEquals 'Number of primitive types', 8, dataModel.dataTypes.findAll {it.domainType == 'PrimitiveType'}.size()
         assertEquals 'Number of reference types', 2, dataModel.dataTypes.findAll {it.domainType == 'ReferenceType'}.size()
-        assertEquals 'Number of tables/dataclasses', 7, dataModel.dataClasses.size()
         assertEquals 'Number of child tables/dataclasses', 1, dataModel.childDataClasses?.size()
     }
 
@@ -106,6 +104,7 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         checkOrganisationEnumerated(dataModel)
         checkSampleSummaryMetadata(dataModel)
         checkBiggerSampleSummaryMetadata(dataModel)
+        checkBiggerSampleViewSummaryMetadata(dataModel)
 
     }
 
@@ -162,8 +161,9 @@ class OracleDatabaseDataModelImporterProviderServiceTest
 
     private void checkBasic(DataModel dataModel) {
         assertEquals 'Database/Model name', 'METADATA_SIMPLE', dataModel.label
+        assertEquals 'Number of tables/dataclasses', 8, dataModel.dataClasses.size()
         final DataClass publicSchema = dataModel.childDataClasses.first()
-        assertEquals 'Number of child tables/dataclasses', 6, publicSchema.dataClasses?.size()
+        assertEquals 'Number of child tables/dataclasses', 7, publicSchema.dataClasses?.size()
 
         final Set<DataClass> dataClasses = publicSchema.dataClasses
 
@@ -401,6 +401,38 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         final DataClass publicSchema = dataModel.childDataClasses.first()
         final Set<DataClass> dataClasses = publicSchema.dataClasses
         final DataClass sampleTable = dataClasses.find {it.label == 'BIGGER_SAMPLE'}
+
+        //Map of column name to expected summary metadata description:reportValue. Expect exact counts.
+        Map<String, Map<String, String>> expectedColumns = [
+                "SAMPLE_INT": ['Value Distribution':'{"0 - 100000":99999,"100000 - 200000":100000,"200000 - 300000":100000,"300000 - 400000":100000,"400000 - 500000":100000,"500000 - 600000":1}'],
+                "SAMPLE_DECIMAL": ['Value Distribution':'{"-1 - 0":249924,"0 - 1":245051,"1 - 2":5025}'],
+                "SAMPLE_DATE": ['Value Distribution':'{"24/08/2020 - 26/08/2020":91265,"26/08/2020 - 28/08/2020":56305,"28/08/2020 - 30/08/2020":43810,"30/08/2020 - 01/09/2020":39468,"01/09/2020 - 03/09/2020":38302,"03/09/2020 - 05/09/2020":39468,"05/09/2020 - 07/09/2020":43810,"07/09/2020 - 09/09/2020":56306,"09/09/2020 - 11/09/2020":91266}'],
+                "SAMPLE_VARCHAR2": []
+        ]
+
+        assertEquals 'Sample Number of columns/dataElements', expectedColumns.size(), sampleTable.dataElements.size()
+
+        expectedColumns.each {columnName, expectedReport ->
+            DataElement de = sampleTable.dataElements.find{it.label == columnName}
+            assertEquals 'One summaryMetadata', expectedReport.size(), de.summaryMetadata.size()
+
+            expectedReport.each {expectedReportDescription, expectedReportValue ->
+                assertEquals "Description of summary metadatdata for ${columnName}", expectedReportDescription, de.summaryMetadata[0].description
+                assertEquals "Value of summary metadatdata for ${columnName}", expectedReportValue, de.summaryMetadata[0].summaryMetadataReports[0].reportValue
+            }
+        }
+    }
+
+    /**
+     * Check that there is a DataClass for the bigger_sample_view view, with 4 columns but exact
+     * summary metadata on any of these columns.
+     * @param dataModel
+     * @return
+     */
+    private checkBiggerSampleViewSummaryMetadata(DataModel dataModel) {
+        final DataClass publicSchema = dataModel.childDataClasses.first()
+        final Set<DataClass> dataClasses = publicSchema.dataClasses
+        final DataClass sampleTable = dataClasses.find {it.label == 'BIGGER_SAMPLE_VIEW'}
 
         //Map of column name to expected summary metadata description:reportValue. Expect exact counts.
         Map<String, Map<String, String>> expectedColumns = [

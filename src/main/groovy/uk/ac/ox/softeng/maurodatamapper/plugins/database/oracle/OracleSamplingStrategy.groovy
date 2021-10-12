@@ -30,7 +30,7 @@ class OracleSamplingStrategy extends SamplingStrategy {
      * @return
      */
     @Override
-    public boolean requiresTableType() {
+    boolean requiresTableType() {
         false
     }
 
@@ -39,7 +39,20 @@ class OracleSamplingStrategy extends SamplingStrategy {
      * @return true
      */
     @Override
-    public boolean canSample() {
+    boolean canSample() {
         true
+    }
+
+    /**
+     * Return a sampling clause. Subclasses should override wth vendor specific sampling clauses
+     * @return
+     */
+    @Override
+    String samplingClause() {
+        if (this.useSampling()) {
+            " SAMPLE (${this.percentage})"
+        } else {
+            ""
+        }
     }
 }

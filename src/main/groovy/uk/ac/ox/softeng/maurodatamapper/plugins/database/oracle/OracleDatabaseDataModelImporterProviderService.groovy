@@ -196,48 +196,6 @@ class OracleDatabaseDataModelImporterProviderService
     boolean isColumnForIntegerSummary(DataType dataType) {
         false
     }
-
-    @Override
-    String countDistinctColumnValuesQueryString(SamplingStrategy samplingStrategy, String columnName, String tableName, String schemaName = null) {
-        String query = super.countDistinctColumnValuesQueryString(columnName, tableName, schemaName)
-
-        if (samplingStrategy.useSampling()) {
-            query = query + " SAMPLE (${samplingStrategy.percentage})"
-        }
-
-        query
-    }
-
-    @Override
-    String distinctColumnValuesQueryString(SamplingStrategy samplingStrategy, String columnName, String tableName, String schemaName = null) {
-        String query = super.distinctColumnValuesQueryString(columnName, tableName, schemaName)
-
-        if (samplingStrategy.useSampling()) {
-            query = query + " SAMPLE (${samplingStrategy.percentage})"
-        }
-
-        query
-    }
-
-    /**
-     * Use the superclass method to construct a query string, and then append a SAMPLE clause if necessary
-     * @param samplingStrategy
-     * @param columnName
-     * @param tableName
-     * @param schemaName
-     * @return Query string, optionally with SAMPLE clause appended
-     */
-    @Override
-    String minMaxColumnValuesQueryString(SamplingStrategy samplingStrategy, String columnName, String tableName, String schemaName = null) {
-        String query = super.minMaxColumnValuesQueryString(samplingStrategy, columnName, tableName, schemaName)
-
-        if (samplingStrategy.useSampling()) {
-            query = query + " SAMPLE (${samplingStrategy.percentage})"
-        }
-
-        query
-    }
-
     String columnRangeDistributionQueryString(DataType dataType,
                                               AbstractIntervalHelper intervalHelper,
                                               String columnName, String tableName, String schemaName) {
@@ -295,18 +253,13 @@ class OracleDatabaseDataModelImporterProviderService
     private String rangeDistributionQueryString(SamplingStrategy samplingStrategy, List<String> selects, String columnName, String tableName, String schemaName) {
         String intervals = selects.join(" UNION ")
 
-        String sample = ""
-        if (samplingStrategy.useSampling()) {
-            sample = " SAMPLE (${samplingStrategy.percentage}) "
-        }
-
         String sql = "WITH interval AS (${intervals})" +
                 """
         SELECT interval_label, COUNT(${escapeIdentifier(columnName)}) AS interval_count
         FROM interval
         LEFT JOIN
         ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)} 
-        ${sample}
+        ${samplingStrategy.samplingClause()}
         ON ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} >= interval.interval_start 
         AND ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} < interval.interval_end
         GROUP BY interval_label, interval_start

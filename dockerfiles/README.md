@@ -93,7 +93,7 @@ Update the configuration by running following command:
 sudo ldconfig
 ```
 
-## Running the Oracle Sercer
+## Running the Oracle Server
 
 The following command will start up a default Oracle 12.1.0.2-ee server instance.
 

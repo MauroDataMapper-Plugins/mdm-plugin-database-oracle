@@ -20,6 +20,7 @@ package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataType
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.AbstractDatabaseDataModelImporterProviderService
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.RemoteDatabaseDataModelImporterProviderService
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.SamplingStrategy
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.summarymetadata.AbstractIntervalHelper
 
 import java.sql.Connection
@@ -30,6 +31,11 @@ import java.time.format.DateTimeFormatter
 class OracleDatabaseDataModelImporterProviderService
     extends AbstractDatabaseDataModelImporterProviderService<OracleDatabaseDataModelImporterProviderServiceParameters>
     implements RemoteDatabaseDataModelImporterProviderService {
+
+    @Override
+    SamplingStrategy getSamplingStrategy(OracleDatabaseDataModelImporterProviderServiceParameters parameters) {
+        new OracleSamplingStrategy(parameters.sampleThreshold ?: DEFAULT_SAMPLE_THRESHOLD, parameters.samplePercent ?: DEFAULT_SAMPLE_PERCENTAGE)
+    }
 
     @Override
     String getDisplayName() {
@@ -155,6 +161,13 @@ class OracleDatabaseDataModelImporterProviderService
     }
 
     @Override
+    List<String> approxCountQueryString(String tableName, String schemaName = null) {
+        List<String> queryStrings = super.approxCountQueryString(tableName, schemaName)
+        queryStrings.push("SELECT NUM_ROWS AS APPROX_COUNT FROM ALL_TABLES WHERE TABLE_NAME = '${tableName}'".toString())
+        queryStrings
+    }
+
+    @Override
     boolean isColumnPossibleEnumeration(DataType dataType) {
         dataType.domainType == 'PrimitiveType' && (dataType.label == "CHAR" || dataType.label == "VARCHAR2")
     }
@@ -183,14 +196,20 @@ class OracleDatabaseDataModelImporterProviderService
     boolean isColumnForIntegerSummary(DataType dataType) {
         false
     }
+    String columnRangeDistributionQueryString(DataType dataType,
+                                              AbstractIntervalHelper intervalHelper,
+                                              String columnName, String tableName, String schemaName) {
+        SamplingStrategy samplingStrategy = new SamplingStrategy()
+        columnRangeDistributionQueryString(samplingStrategy, dataType, intervalHelper, columnName, tableName, schemaName)
+    }
 
     @Override
-    String columnRangeDistributionQueryString(DataType dataType, AbstractIntervalHelper intervalHelper, String columnName, String tableName, String schemaName) {
+    String columnRangeDistributionQueryString(SamplingStrategy samplingStrategy, DataType dataType, AbstractIntervalHelper intervalHelper, String columnName, String tableName, String schemaName) {
         List<String> selects = intervalHelper.intervals.collect {
             "SELECT '${it.key}' AS interval_label, ${formatDataType(dataType, it.value.aValue)} AS interval_start, ${formatDataType(dataType, it.value.bValue)} AS interval_end FROM DUAL "
         }
 
-        rangeDistributionQueryString(selects, columnName, tableName, schemaName)
+        rangeDistributionQueryString(samplingStrategy, selects, columnName, tableName, schemaName)
     }
 
     /**
@@ -231,7 +250,7 @@ class OracleDatabaseDataModelImporterProviderService
      * @param selects
      * @return Query string for intervals, using Oracle SQL
      */
-    private String rangeDistributionQueryString(List<String> selects, String columnName, String tableName, String schemaName) {
+    private String rangeDistributionQueryString(SamplingStrategy samplingStrategy, List<String> selects, String columnName, String tableName, String schemaName) {
         String intervals = selects.join(" UNION ")
 
         String sql = "WITH interval AS (${intervals})" +
@@ -240,6 +259,7 @@ class OracleDatabaseDataModelImporterProviderService
         FROM interval
         LEFT JOIN
         ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)} 
+        ${samplingStrategy.samplingClause()}
         ON ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} >= interval.interval_start 
         AND ${escapeIdentifier(schemaName)}.${escapeIdentifier(tableName)}.${escapeIdentifier(columnName)} < interval.interval_end
         GROUP BY interval_label, interval_start

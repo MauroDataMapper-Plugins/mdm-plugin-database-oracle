@@ -357,3 +357,21 @@ INSERT INTO sample(id, sample_smallint, sample_int, sample_decimal, sample_numer
 INSERT INTO sample(id, sample_smallint, sample_int, sample_decimal, sample_numeric, sample_date) VALUES (199, 98 ,9604, 5503092, 8.98456245839879, TO_DATE('18/03/2021', 'DD/MM/YYYY'));
 INSERT INTO sample(id, sample_smallint, sample_int, sample_decimal, sample_numeric, sample_date) VALUES (200, 99 ,9801, 5615973, 9.262416137007, TO_DATE('19/03/2021', 'DD/MM/YYYY'));
 INSERT INTO sample(id, sample_smallint, sample_int, sample_decimal, sample_numeric, sample_date) VALUES (201, 100 ,10000, 5730000, 9.545940104037, TO_DATE('20/03/2021', 'DD/MM/YYYY'));
+
+CREATE TABLE bigger_sample
+(
+  sample_int INT,
+  sample_decimal DECIMAL(12,3),
+  sample_date DATE,
+  sample_varchar2 VARCHAR2(20)
+);
+INSERT INTO bigger_sample(sample_int)
+WITH populate(x) AS (SELECT 1 AS x FROM DUAL UNION ALL SELECT x + 1 FROM populate WHERE x < 500000)
+SELECT x FROM populate;
+UPDATE bigger_sample
+SET sample_decimal = SIN(sample_int),
+sample_date = TO_DATE('2020-09-02', 'YYYY-MM-DD') + 200 * SIN(sample_int) / 24,
+sample_varchar2 = 'ENUM' || TO_CHAR(MOD(sample_int, 15));
+commit;
+
+CREATE VIEW bigger_sample_view AS SELECT * FROM bigger_sample;

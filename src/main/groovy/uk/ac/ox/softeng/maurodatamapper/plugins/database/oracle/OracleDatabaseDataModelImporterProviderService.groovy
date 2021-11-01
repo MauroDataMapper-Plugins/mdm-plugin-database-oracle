@@ -18,10 +18,13 @@
 package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
 
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataType
+import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.DefaultDataTypeProvider
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.AbstractDatabaseDataModelImporterProviderService
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.RemoteDatabaseDataModelImporterProviderService
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.SamplingStrategy
 import uk.ac.ox.softeng.maurodatamapper.plugins.database.summarymetadata.AbstractIntervalHelper
+
+import org.springframework.beans.factory.annotation.Autowired
 
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -31,6 +34,9 @@ import java.time.format.DateTimeFormatter
 class OracleDatabaseDataModelImporterProviderService
     extends AbstractDatabaseDataModelImporterProviderService<OracleDatabaseDataModelImporterProviderServiceParameters>
     implements RemoteDatabaseDataModelImporterProviderService {
+
+    @Autowired
+    OracleDataTypeProvider oracleDataTypeProvider
 
     @Override
     SamplingStrategy getSamplingStrategy(OracleDatabaseDataModelImporterProviderServiceParameters parameters) {
@@ -55,6 +61,11 @@ class OracleDatabaseDataModelImporterProviderService
     @Override
     String getColumnIsNullableColumnName() {
         'nullable'
+    }
+
+    @Override
+    DefaultDataTypeProvider getDefaultDataTypeProvider() {
+        oracleDataTypeProvider
     }
 
     @Override

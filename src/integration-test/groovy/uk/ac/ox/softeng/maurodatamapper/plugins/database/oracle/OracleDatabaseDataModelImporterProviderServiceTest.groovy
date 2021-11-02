@@ -68,11 +68,9 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         checkBiggerSampleNoSummaryMetadata(dataModel)
 
         List<String> defaultDataTypeLabels = importerInstance.defaultDataTypeProvider.defaultListOfDataTypes.collect {it.label}
-        assertEquals 'Default DT Provider', 29, defaultDataTypeLabels.size()
-        log.warn '{}', dataModel.primitiveTypes.findAll {!(it.label in defaultDataTypeLabels)}
-        assertEquals 'Number of columntypes/datatypes', 31, dataModel.dataTypes?.size()
-        assertTrue 'All primitive DTs map to a default DT', dataModel.primitiveTypes.findAll {!(it.label in defaultDataTypeLabels)}.isEmpty()
-        assertEquals 'Number of primitive types', 29, dataModel.dataTypes.findAll {it.domainType == 'PrimitiveType'}.size()
+        assertEquals 'Default DT Provider', 32, defaultDataTypeLabels.size()
+        assertEquals 'Number of columntypes/datatypes', 35, dataModel.dataTypes?.size()
+        assertEquals 'Number of primitive types', 33, dataModel.dataTypes.findAll {it.domainType == 'PrimitiveType'}.size()
         assertEquals 'Number of reference types', 2, dataModel.dataTypes.findAll {it.domainType == 'ReferenceType'}.size()
         assertEquals 'Number of child tables/dataclasses', 1, dataModel.childDataClasses?.size()
 
@@ -92,12 +90,12 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         checkBiggerSampleNoSummaryMetadata(dataModel)
 
         List<String> defaultDataTypeLabels = importerInstance.defaultDataTypeProvider.defaultListOfDataTypes.collect {it.label}
-        assertEquals 'Default DT Provider', 29, defaultDataTypeLabels.size()
+        assertEquals 'Default DT Provider', 32, defaultDataTypeLabels.size()
 
-        assertEquals 'Number of columntypes/datatypes', 31, dataModel.dataTypes?.size()
-        assertTrue 'All primitive DTs map to a default DT', dataModel.primitiveTypes.findAll {!(it.label in defaultDataTypeLabels)}.isEmpty()
-        assertEquals 'Number of primitive types', 29, dataModel.dataTypes.findAll {it.domainType == 'PrimitiveType'}.size()
+        assertEquals 'Number of columntypes/datatypes', 39, dataModel.dataTypes?.size()
+        assertEquals 'Number of primitive types', 33, dataModel.dataTypes.findAll {it.domainType == 'PrimitiveType'}.size()
         assertEquals 'Number of reference types', 2, dataModel.dataTypes.findAll {it.domainType == 'ReferenceType'}.size()
+        assertEquals 'Number of reference types', 4, dataModel.dataTypes.findAll {it.domainType == 'EnumerationType'}.size()
         assertEquals 'Number of child tables/dataclasses', 1, dataModel.childDataClasses?.size()
     }
 

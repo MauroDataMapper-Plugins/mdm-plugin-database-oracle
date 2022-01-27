@@ -368,7 +368,7 @@ class OracleDatabaseDataModelImporterProviderServiceTest
         //sample_date
         final DataElement sample_date = sampleTable.dataElements.find{it.label == "SAMPLE_DATE"}
         assertEquals 'reportValue for sample_date',
-                '{"Sep 2020":30,"Oct 2020":31,"Nov 2020":30,"Dec 2020":31,"Jan 2021":31,"Feb 2021":28,"Mar 2021":20}',
+                '{"Sept 2020":30,"Oct 2020":31,"Nov 2020":30,"Dec 2020":31,"Jan 2021":31,"Feb 2021":28,"Mar 2021":20}',
                 sample_date.summaryMetadata[0].summaryMetadataReports[0].reportValue
 
     }

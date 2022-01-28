@@ -280,6 +280,28 @@ class OracleDatabaseDataModelImporterProviderService
         sql.stripIndent()
     }
 
+    /**
+     * Use IS NOT NULL rather than <> ''
+     */
+    @Override
+    String countDistinctColumnValuesQueryString(SamplingStrategy samplingStrategy, String columnName, String tableName, String schemaName = null) {
+        String schemaIdentifier = schemaName ? "${escapeIdentifier(schemaName)}." : ""
+        "SELECT COUNT(DISTINCT(${escapeIdentifier(columnName)})) AS count FROM ${schemaIdentifier}${escapeIdentifier(tableName)}" +
+                samplingStrategy.samplingClause() +
+                "WHERE ${escapeIdentifier(columnName)} IS NOT NULL"
+    }
+
+    /**
+     * Use IS NOT NULL rather than <> ''
+     */
+    @Override
+    String distinctColumnValuesQueryString(SamplingStrategy samplingStrategy, String columnName, String tableName, String schemaName = null) {
+        String schemaIdentifier = schemaName ? "${escapeIdentifier(schemaName)}." : ""
+        "SELECT DISTINCT(${escapeIdentifier(columnName)}) AS distinct_value FROM ${schemaIdentifier}${escapeIdentifier(tableName)}" +
+                samplingStrategy.samplingClause() +
+                "WHERE ${escapeIdentifier(columnName)} IS NOT NULL"
+    }
+
     @Override
     PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseDataModelImporterProviderServiceParameters parameters) {
         connection.prepareStatement(databaseStructureQueryString).tap {setString 1, parameters.databaseOwner}

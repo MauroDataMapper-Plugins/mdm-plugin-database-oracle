@@ -15,22 +15,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
+package uk.ac.ox.softeng.maurodatamapper.plugins.oracle
 
-import uk.ac.ox.softeng.maurodatamapper.provider.plugin.AbstractMauroDataMapperPlugin
+import uk.ac.ox.softeng.maurodatamapper.util.Utils
 
-class OracleDatabasePlugin extends AbstractMauroDataMapperPlugin {
+import grails.boot.GrailsApp
+import grails.boot.config.GrailsAutoConfiguration
+import grails.plugins.metadata.PluginSource
+import org.springframework.context.annotation.ComponentScan
 
-    @Override
-    String getName() {
-        'Plugin : Database - Oracle'
-    }
-
-    @Override
-    Closure doWithSpring() {
-        {->
-            oracleDatabaseDataModelImporterProviderService OracleDatabaseDataModelImporterProviderService
-            oracleDataTypeProvider OracleDataTypeProvider
-        }
+@PluginSource
+@ComponentScan(basePackages = ['uk.ac.ox.softeng.maurodatamapper'])
+class Application extends GrailsAutoConfiguration {
+    static void main(String[] args) {
+        Utils.outputRuntimeArgs(Application)
+        GrailsApp.run(Application, args)
     }
 }

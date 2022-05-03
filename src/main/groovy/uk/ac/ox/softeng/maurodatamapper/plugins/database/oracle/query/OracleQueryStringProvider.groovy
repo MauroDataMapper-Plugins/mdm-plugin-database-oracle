@@ -15,61 +15,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
+package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle.query
 
 import uk.ac.ox.softeng.maurodatamapper.datamodel.item.datatype.DataType
-import uk.ac.ox.softeng.maurodatamapper.datamodel.provider.DefaultDataTypeProvider
 import uk.ac.ox.softeng.maurodatamapper.datamodel.summarymetadata.AbstractIntervalHelper
-import uk.ac.ox.softeng.maurodatamapper.plugins.database.AbstractDatabaseDataModelImporterProviderService
-import uk.ac.ox.softeng.maurodatamapper.plugins.database.RemoteDatabaseDataModelImporterProviderService
-import uk.ac.ox.softeng.maurodatamapper.plugins.database.SamplingStrategy
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.calculation.CalculationStrategy
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.calculation.SamplingStrategy
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.query.QueryStringProvider
 
-import org.springframework.beans.factory.annotation.Autowired
-
-import java.sql.Connection
-import java.sql.PreparedStatement
 import java.time.format.DateTimeFormatter
 
-// @CompileStatic
-class OracleDatabaseDataModelImporterProviderService
-    extends AbstractDatabaseDataModelImporterProviderService<OracleDatabaseDataModelImporterProviderServiceParameters>
-    implements RemoteDatabaseDataModelImporterProviderService {
-
-    @Autowired
-    OracleDataTypeProvider oracleDataTypeProvider
+/**
+ * @since 03/05/2022
+ */
+class OracleQueryStringProvider extends QueryStringProvider {
 
     @Override
-    SamplingStrategy getSamplingStrategy(OracleDatabaseDataModelImporterProviderServiceParameters parameters) {
-        new OracleSamplingStrategy(parameters.sampleThreshold ?: DEFAULT_SAMPLE_THRESHOLD, parameters.samplePercent ?: DEFAULT_SAMPLE_PERCENTAGE)
-    }
-
-    @Override
-    String getDisplayName() {
-        'Oracle DB Importer'
-    }
-
-    @Override
-    String getVersion() {
-        getClass().getPackage().getSpecificationVersion() ?: 'SNAPSHOT'
-    }
-
-    @Override
-    String getSchemaNameColumnName() {
-        'owner'
-    }
-
-    @Override
-    String getColumnIsNullableColumnName() {
-        'nullable'
-    }
-
-    @Override
-    DefaultDataTypeProvider getDefaultDataTypeProvider() {
-        oracleDataTypeProvider
-    }
-
-    @Override
-    String getStandardConstraintInformationQueryString() {
+    String standardConstraintInformationQueryString() {
         '''
         SELECT
           TABLE_NAME,
@@ -82,7 +44,7 @@ class OracleDatabaseDataModelImporterProviderService
     }
 
     @Override
-    String getPrimaryKeyAndUniqueConstraintInformationQueryString() {
+    String primaryKeyAndUniqueConstraintInformationQueryString() {
         '''
         SELECT
           ac.CONSTRAINT_NAME,
@@ -153,16 +115,6 @@ class OracleDatabaseDataModelImporterProviderService
         'SELECT * FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = ?'
     }
 
-    @Override
-    boolean isColumnNullable(String nullableColumnValue) {
-        nullableColumnValue == 'Y'
-    }
-
-    @Override
-    Boolean canImportMultipleDomains() {
-        false
-    }
-
     /**
      * Oracle identifiers escaped in double quotes. Identifiers must be in upper case for Oracle.
      */
@@ -179,45 +131,11 @@ class OracleDatabaseDataModelImporterProviderService
     }
 
     @Override
-    boolean isColumnPossibleEnumeration(DataType dataType) {
-        dataType.domainType == 'PrimitiveType' && (dataType.label == "CHAR" || dataType.label == "VARCHAR2")
-    }
-
-    @Override
-    boolean isColumnForDateSummary(DataType dataType) {
-        dataType.domainType == 'PrimitiveType' && ["DATE"].contains(dataType.label)
-    }
-
-    /**
-     * Int and decimals all have datatype NUMBER
-     * @param dataType
-     * @return
-     */
-    @Override
-    boolean isColumnForDecimalSummary(DataType dataType) {
-        dataType.domainType == 'PrimitiveType' && ["NUMBER"].contains(dataType.label)
-    }
-
-    /**
-     * INT has a datatype of NUMBER so will be handled using the Decimal helper
-     * @param dataType
-     * @return
-     */
-    @Override
-    boolean isColumnForIntegerSummary(DataType dataType) {
-        false
-    }
-    String columnRangeDistributionQueryString(DataType dataType,
-                                              AbstractIntervalHelper intervalHelper,
-                                              String columnName, String tableName, String schemaName) {
-        SamplingStrategy samplingStrategy = new SamplingStrategy()
-        columnRangeDistributionQueryString(samplingStrategy, dataType, intervalHelper, columnName, tableName, schemaName)
-    }
-
-    @Override
-    String columnRangeDistributionQueryString(SamplingStrategy samplingStrategy, DataType dataType, AbstractIntervalHelper intervalHelper, String columnName, String tableName, String schemaName) {
+    String columnRangeDistributionQueryString(SamplingStrategy samplingStrategy, DataType dataType, AbstractIntervalHelper intervalHelper, String columnName, String tableName,
+                                              String schemaName) {
         List<String> selects = intervalHelper.intervals.collect {
-            "SELECT '${it.key}' AS interval_label, ${formatDataType(dataType, it.value.aValue)} AS interval_start, ${formatDataType(dataType, it.value.bValue)} AS interval_end FROM DUAL "
+            "SELECT '${it.key}' AS interval_label, ${formatDataType(dataType, it.value.aValue)} AS interval_start, ${formatDataType(dataType, it.value.bValue)} AS " +
+            "interval_end FROM DUAL "
         }
 
         rangeDistributionQueryString(samplingStrategy, selects, columnName, tableName, schemaName)
@@ -233,7 +151,7 @@ class OracleDatabaseDataModelImporterProviderService
      * or a string
      */
     String formatDataType(DataType dataType, Object value) {
-        if (isColumnForDateSummary(dataType)){
+        if (isColumnForDateSummary(dataType)) {
             "TO_DATE('${DateTimeFormatter.ISO_LOCAL_DATE.format(value)} ${DateTimeFormatter.ISO_LOCAL_TIME.format(value)}', 'YYYY-MM-DD HH24:MI:SS')"
         } else {
             "${value}"
@@ -265,7 +183,7 @@ class OracleDatabaseDataModelImporterProviderService
         String intervals = selects.join(" UNION ")
 
         String sql = "WITH interval AS (${intervals})" +
-                """
+                     """
         SELECT interval_label, COUNT(${escapeIdentifier(columnName)}) AS interval_count
         FROM interval
         LEFT JOIN
@@ -287,23 +205,23 @@ class OracleDatabaseDataModelImporterProviderService
     String countDistinctColumnValuesQueryString(SamplingStrategy samplingStrategy, String columnName, String tableName, String schemaName = null) {
         String schemaIdentifier = schemaName ? "${escapeIdentifier(schemaName)}." : ""
         "SELECT COUNT(DISTINCT(${escapeIdentifier(columnName)})) AS count FROM ${schemaIdentifier}${escapeIdentifier(tableName)}" +
-                samplingStrategy.samplingClause() +
-                "WHERE ${escapeIdentifier(columnName)} IS NOT NULL"
+        samplingStrategy.samplingClause() +
+        "WHERE ${escapeIdentifier(columnName)} IS NOT NULL"
     }
 
     /**
      * Use IS NOT NULL rather than <> ''
      */
     @Override
-    String distinctColumnValuesQueryString(SamplingStrategy samplingStrategy, String columnName, String tableName, String schemaName = null) {
+    String distinctColumnValuesQueryString(CalculationStrategy calculationStrategy, SamplingStrategy samplingStrategy, String columnName, String tableName,
+                                           String schemaName = null) {
         String schemaIdentifier = schemaName ? "${escapeIdentifier(schemaName)}." : ""
         "SELECT DISTINCT(${escapeIdentifier(columnName)}) AS distinct_value FROM ${schemaIdentifier}${escapeIdentifier(tableName)}" +
-                samplingStrategy.samplingClause() +
-                "WHERE ${escapeIdentifier(columnName)} IS NOT NULL"
+        samplingStrategy.samplingClause() +
+        "WHERE ${escapeIdentifier(columnName)} IS NOT NULL"
     }
 
-    @Override
-    PreparedStatement prepareCoreStatement(Connection connection, OracleDatabaseDataModelImporterProviderServiceParameters parameters) {
-        connection.prepareStatement(databaseStructureQueryString).tap {setString 1, parameters.databaseOwner}
+    boolean isColumnForDateSummary(DataType dataType) {
+        dataType.domainType == 'PrimitiveType' && ["DATE"].contains(dataType.label)
     }
 }

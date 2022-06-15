@@ -52,6 +52,11 @@ class OracleDatabaseDataModelImporterProviderService
     }
 
     @Override
+    Boolean handlesContentType(String contentType) {
+        false
+    }
+
+    @Override
     String getSchemaNameColumnName() {
         'owner'
     }

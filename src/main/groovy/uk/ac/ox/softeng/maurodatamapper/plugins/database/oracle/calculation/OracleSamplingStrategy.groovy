@@ -15,20 +15,22 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle
+package uk.ac.ox.softeng.maurodatamapper.plugins.database.oracle.calculation
 
-import uk.ac.ox.softeng.maurodatamapper.plugins.database.SamplingStrategy
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.DatabaseDataModelWithSamplingImporterProviderServiceParameters
+import uk.ac.ox.softeng.maurodatamapper.plugins.database.calculation.SamplingStrategy
 
 class OracleSamplingStrategy extends SamplingStrategy {
-
-    OracleSamplingStrategy(Integer threshold, BigDecimal percentage) {
-        super(threshold, percentage)
-    }
 
     /**
      * Oracle can sample views as well as tables, so we don't need to check the table type
      * @return
      */
+    OracleSamplingStrategy(String schema, String table,
+                           DatabaseDataModelWithSamplingImporterProviderServiceParameters samplingImporterProviderServiceParameters) {
+        super(schema, table, samplingImporterProviderServiceParameters)
+    }
+
     @Override
     boolean requiresTableType() {
         false
@@ -39,7 +41,7 @@ class OracleSamplingStrategy extends SamplingStrategy {
      * @return true
      */
     @Override
-    boolean canSample() {
+    boolean canSampleTableType() {
         true
     }
 
@@ -48,11 +50,16 @@ class OracleSamplingStrategy extends SamplingStrategy {
      * @return
      */
     @Override
-    String samplingClause() {
-        if (this.useSampling()) {
-            " SAMPLE (${this.percentage})"
-        } else {
-            ""
+    String samplingClause(Type type) {
+        BigDecimal percentage
+        switch (type) {
+            case Type.SUMMARY_METADATA:
+                percentage = getSummaryMetadataSamplePercentage()
+                break
+            case Type.ENUMERATION_VALUES:
+                percentage = getEnumerationValueSamplePercentage()
+                break
         }
+        this.useSamplingFor(type) ? " SAMPLE (${percentage})" : ''
     }
 }

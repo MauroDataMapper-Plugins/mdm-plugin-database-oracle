@@ -3,7 +3,7 @@ dependencies {
     if (findProject(':mdm-plugin-database')) implementation project(':mdm-plugin-database')
     else implementation group: 'uk.ac.ox.softeng.maurodatamapper.plugins', name: 'mdm-plugin-database', version: mdmPluginDatabaseVersion
 
-    implementation group: 'com.oracle.database.jdbc', name: 'ojdbc10', version: oracleJdbcVersion
+    implementation group: 'com.oracle.database.jdbc', name: 'ojdbc11', version: oracleJdbcVersion
 
     runtimeOnly "io.methvin:directory-watcher", {
         exclude group: 'com.google.guava', module: 'guava'

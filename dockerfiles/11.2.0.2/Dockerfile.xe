@@ -26,7 +26,7 @@
 #
 # Pull base image
 # ---------------
-FROM oraclelinux:7-slim
+FROM oraclelinux:9-slim
 
 # Labels
 # ------

@@ -59,7 +59,7 @@ class OracleDatabaseDataModelImporterProviderServiceTest
     @Override
     OracleDatabaseDataModelImporterProviderServiceParameters createDatabaseImportParameters() {
         new OracleDatabaseDataModelImporterProviderServiceParameters().tap {
-            databaseNames = 'ORCLPDB1'
+            databaseNames = 'FREE'
             databaseUsername = 'SYSTEM'
             databasePassword = 'BOpVnzFi9Ew=1'
             databaseOwner = 'SYSTEM'

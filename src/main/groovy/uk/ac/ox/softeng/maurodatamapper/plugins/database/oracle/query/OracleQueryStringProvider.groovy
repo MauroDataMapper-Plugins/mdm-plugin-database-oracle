@@ -214,11 +214,14 @@ class OracleQueryStringProvider extends QueryStringProvider {
      */
     @Override
     String distinctColumnValuesQueryString(CalculationStrategy calculationStrategy, SamplingStrategy samplingStrategy, String columnName, String tableName,
-                                           String schemaName = null) {
+                                           String schemaName = null, boolean allValues = false) {
         String schemaIdentifier = schemaName ? "${escapeIdentifier(schemaName)}." : ""
-        "SELECT DISTINCT(${escapeIdentifier(columnName)}) AS distinct_value FROM ${schemaIdentifier}${escapeIdentifier(tableName)}" +
+        String limitClause = allValues ? '' : "FETCH NEXT ${calculationStrategy.maxEnumerations + 1} ROWS ONLY"
+        "SELECT DISTINCT(${escapeIdentifier(columnName)}) AS distinct_value FROM ${schemaIdentifier}${escapeIdentifier(tableName)} " +
         samplingStrategy.samplingClause() +
-        "WHERE ${escapeIdentifier(columnName)} IS NOT NULL"
+        " WHERE ${escapeIdentifier(columnName)} IS NOT NULL " +
+        limitClause
+
     }
 
     boolean isColumnForDateSummary(DataType dataType) {

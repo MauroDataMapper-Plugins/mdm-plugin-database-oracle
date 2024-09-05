@@ -80,14 +80,22 @@ class OracleQueryStringProvider extends QueryStringProvider {
             THEN 1
           ELSE 0
           END AS                      PRIMARY_INDEX,
-          LISTAGG(cols.COLUMN_NAME, ', ')
-          WITHIN GROUP (
-            ORDER BY COLUMN_POSITION) "COLUMN_NAMES"
+          RTRIM(XMLAGG(XMLELEMENT(E,cols.COLUMN_NAME,',').EXTRACT('//text()')
+            ORDER BY cols.COLUMN_POSITION).GetClobVal(),',') "COLUMN_NAMES"
         FROM SYS.ALL_INDEXES ix
-          LEFT JOIN SYS.ALL_CONSTRAINTS pc ON ix.INDEX_NAME = pc.INDEX_NAME
-          LEFT JOIN SYS.ALL_IND_COLUMNS cols ON ix.INDEX_NAME = cols.INDEX_NAME
+          LEFT JOIN SYS.ALL_CONSTRAINTS pc ON ix.INDEX_NAME = pc.INDEX_NAME and ix.OWNER = pc.INDEX_OWNER
+          LEFT JOIN SYS.ALL_IND_COLUMNS cols ON ix.INDEX_NAME = cols.INDEX_NAME and ix.OWNER = cols.INDEX_OWNER
         WHERE ix.OWNER = ?
         GROUP BY ix.TABLE_NAME, ix.INDEX_NAME, ix.UNIQUENESS, pc.CONSTRAINT_TYPE
+        '''.stripIndent()
+    }
+
+    @Override
+    String getIdentityColumnInformationQueryString() {
+        '''
+        select TABLE_NAME, COLUMN_NAME, 1, null, null
+        FROM ALL_TAB_IDENTITY_COLS
+        WHERE OWNER = ?
         '''.stripIndent()
     }
 
